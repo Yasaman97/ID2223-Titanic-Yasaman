@@ -4,7 +4,7 @@ import modal
 LOCAL=True
 
 if LOCAL == False:
-   stub = modal.Stub()
+   stub = modal.Stub("titanic_batch_daily")
    hopsworks_image = modal.Image.debian_slim().pip_install(["hopsworks","joblib","seaborn","sklearn","dataframe-image"])
    @stub.function(image=hopsworks_image, schedule=modal.Period(days=1), secret=modal.Secret.from_name("HOPSWORKS_API_KEY"))
    def f():
@@ -31,7 +31,7 @@ def g():
     model_dir = model.download()
     model = joblib.load(model_dir + "/titanic_model.pkl")
     
-    feature_view = fs.get_feature_view(name="titanic_modal", version=1)
+    feature_view = fs.get_feature_view(name="titanic_modal", version=2)
     batch_data = feature_view.get_batch_data()
     
     y_pred = model.predict(batch_data)
@@ -41,26 +41,25 @@ def g():
     passenger = y_pred[y_pred.size-offset]
     print("Passenger predicted: ", passenger)
 
-    survival_url = "https://raw.githubusercontent.com/featurestoreorg/serverless-ml-course/main/src/01-module/assets/" + survival + ".png"
-    print("Survival predicted: " + survival)
-    img = Image.open(requests.get(survival_url, stream=True).raw)            
+    passenger_url = "https://raw.githubusercontent.com/Yasaman97/ID2223-Titanic-Yasaman/main/img/" + str(passenger) + ".jpg"
+    img = Image.open(requests.get(passenger_url, stream=True).raw)            
     img.save("./latest_passenger.png")
     dataset_api = project.get_dataset_api()    
     dataset_api.upload("./latest_passenger.png", "Resources/images", overwrite=True)
     
-    titanic_fg = fs.get_feature_group(name="titanic_modal", version=1)
+    titanic_fg = fs.get_feature_group(name="titanic_modal", version=3)
     df = titanic_fg.read()
     # print(df["variety"])
     label = int(df.iloc[-offset]["survived"])
 
-    label_url = "https://raw.githubusercontent.com/featurestoreorg/serverless-ml-course/main/src/01-module/assets/" + label + ".png"
-    print("Actual survival: " + label)
+    label_url = "https://raw.githubusercontent.com/Yasaman97/ID2223-Titanic-Yasaman/main/img/" + str(label) + ".jpg"
+    print("Actual survival: " , label)
     img = Image.open(requests.get(label_url, stream=True).raw)            
     img.save("./actual_passenger.png")
-    dataset_api.upload("./actual_titanic.png", "Resources/images", overwrite=True)
+    dataset_api.upload("./actual_passenger.png", "Resources/images", overwrite=True)
     
     monitor_fg = fs.get_or_create_feature_group(name="titanic_predictions",
-                                                version=1,
+                                                version=3,
                                                 primary_key=["datetime"],
                                                 description="Titanic Survival Prediction/Outcome Monitoring"
                                                 )
@@ -100,7 +99,7 @@ def g():
         fig.savefig("./confusion_matrix.png")
         dataset_api.upload("./confusion_matrix.png", "Resources/images", overwrite=True)
     else:
-        print("You need 2 differentpredictions to create the confusion matrix.")
+        print("You need 2 different predictions to create the confusion matrix.")
         print("Run the batch inference pipeline more times until you get 2 different predictions") 
 
 
@@ -108,6 +107,7 @@ if __name__ == "__main__":
     if LOCAL == True :
         g()
     else:
+        stub.deploy("titanic_batch_daily")
         with stub.run():
             f()
 

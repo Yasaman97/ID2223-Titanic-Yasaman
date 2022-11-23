@@ -5,7 +5,7 @@ BACKFILL=False
 LOCAL=True
 
 if LOCAL == False:
-   stub = modal.Stub()
+   stub = modal.Stub("titanic_daily")
    image = modal.Image.debian_slim().pip_install(["hopsworks","joblib","seaborn","sklearn","dataframe-image"]) 
 
    @stub.function(image=image, schedule=modal.Period(days=1), secret=modal.Secret.from_name("HOPSWORKS_API_KEY"))
@@ -13,22 +13,22 @@ if LOCAL == False:
        g()
 
 
-def generate_passenger(Survived, Pclass_max, Pclass_min, Sex_max, Sex_min, Age_max, Age_min, SibSp_max, SibSp_min, Parch_max, Parch_min, Fare_max, Fare_min, Embarked_max, Embarked_min):
+def generate_passenger(survived, Pclass_max, Pclass_min, Sex_max, Sex_min, Age_max, Age_min, SibSp_max, SibSp_min, Parch_max, Parch_min, Fare_max, Fare_min, Embarked_max, Embarked_min):
     """
     Returns a single passenger as a single row in a DataFrame
     """
     import pandas as pd
     import random
 
-    df = pd.DataFrame({ "Plass": [random.randint(Pclass_max, Pclass_min)],
-                       "Sex": [random.randint(Sex_max, Sex_min)],
-                       "Age": [random.uniform(Age_max, Age_min)],
-                       "SibSp": [random.randint(SibSp_max, SibSp_min)],
-                       "Parch": [random.randint(Parch_max, Parch_min)],
-                       "Fare": [random.uniformt(Fare_max, Fare_min)],
-                       "Embarked": [random.randint(Embarked_max, Embarked_min)],
+    df = pd.DataFrame({ "Pclass": [random.randint(Pclass_min, Pclass_max)],
+                       "Sex": [random.randint(Sex_min, Sex_max)],
+                       "Age": [random.uniform(Age_min, Age_max)],
+                       "SibSp": [random.randint(SibSp_min, SibSp_max)],
+                       "Parch": [random.randint(Parch_min, Parch_max)],
+                       "Fare": [random.uniform(Fare_min, Fare_max)],
+                       "Embarked": [random.randint(Embarked_min, Embarked_max)]
                       })
-    df['Surviveed'] = Survived
+    df['Survived'] = survived
     return df
 
 
@@ -39,8 +39,8 @@ def get_random_passenger():
     import pandas as pd
     import random
 
-    Survived_df = generate_passenger(1, 3, 1, 1, 0, 80, 0.42, 4, 0, 5, 0, 512.3292, 0, 2, 0)
-    NotSurvived_df = generate_passenger(0, 3, 1, 1, 0, 74, 1, 8, 0, 6, 0, 263.0, 0, 2, 0)
+    Survived_df = generate_passenger(1, 3, 0, 1, 0, 80, 0.42, 3, 0, 2, 0, 512.3292, 0, 2, 0)
+    NotSurvived_df = generate_passenger(0, 3, 1, 1, 0, 74, 1, 3, 0, 4, 0, 263.0, 0, 2, 0)
 
 
     # randomly pick one of these 2 and write it to the featurestore
@@ -68,11 +68,9 @@ def g():
     else:
         titanic_df = get_random_passenger()
 
-    titanic_fg = fs.get_or_create_feature_group(
+    titanic_fg = fs.get_feature_group(
         name="titanic_modal",
-        version=1,
-        primary_key=["Pclass","Sex","Age","SibSp","Parch","Fare","Embarked"], 
-        description="Titanic dataset")
+        version=3)
     titanic_fg.insert(titanic_df, write_options={"wait_for_job" : False})
 
 if __name__ == "__main__":

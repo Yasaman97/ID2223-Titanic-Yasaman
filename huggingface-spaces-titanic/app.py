@@ -29,7 +29,7 @@ def titanic(Pclass,Sex,Age,SibSp,Parch,Fare,Embarked):
     res = model.predict(np.asarray(input_list).reshape(1, -1)) 
     # We add '[0]' to the result of the transformed 'res', because 'res' is a list, and we only want 
     # the first element.
-    survival_url = "https://raw.githubusercontent.com/featurestoreorg/serverless-ml-course/main/src/01-module/assets/" + res[0] + ".png"
+    survival_url = "https://raw.githubusercontent.com/Yasaman97/ID2223-Titanic-Yasaman/main/img/" + str(res[0]) + ".jpg"
     img = Image.open(requests.get(survival_url, stream=True).raw)            
     return img
         
@@ -42,8 +42,8 @@ demo = gr.Interface(
         gr.inputs.Number(default=1.0, label="Pclass (int 1-3)"),
         gr.inputs.Number(default=1.0, label="Sex (1: female, 0: male)"),
         gr.inputs.Number(default=1.0, label="Age (float (in the dataset: 1-80))"),
-        gr.inputs.Number(default=1.0, label="SibSp (int 0-8)"),
-        gr.inputs.Number(default=1.0, label="Parch (int 0-6)"),
+        gr.inputs.Number(default=1.0, label="SibSp (int 0-3)"),
+        gr.inputs.Number(default=1.0, label="Parch (int 0-4)"),
         gr.inputs.Number(default=1.0, label="Fare (float (in the dataset: 0-512)"),
         gr.inputs.Number(default=1.0, label="Embarked (int 0-2)"),
         ],
